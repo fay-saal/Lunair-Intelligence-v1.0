@@ -201,6 +201,11 @@ app.post('/api/audio/transcript', upload.single('file'), async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+export const handler = app;
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Backend server running on http://localhost:${PORT}`);
+  });
+}
