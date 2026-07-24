@@ -74,14 +74,6 @@ app.post('/api/youtube/transcript', async (req, res) => {
   } catch (err: any) {
     console.log(`Fast path failed: ${err.message}. Whisper fallback is currently disabled.`);
     
-    // Disable Whisper fallback gracefully if running in Netlify (AWS Lambda)
-    // Serverless environments cannot run ffmpeg reliably and have 10s timeouts.
-    const isServerless = !!process.env.AWS_LAMBDA_FUNCTION_NAME || !!process.env.NETLIFY;
-    
-    if (isServerless) {
-      return res.status(400).json({ error: 'This video doesn\'t have captions available. (Note: Audio transcription fallback is disabled in Netlify serverless environments).' });
-    }
-
     const WHISPER_FALLBACK_ENABLED = true;
     
     if (!WHISPER_FALLBACK_ENABLED) {
@@ -141,6 +133,12 @@ app.post('/api/youtube/transcript', async (req, res) => {
       return res.json({ transcript: formattedTranscript, source: 'whisper' });
     } catch (fallbackErr: any) {
       console.error(`Fallback failed:`, fallbackErr);
+      
+      // Catch ffmpeg missing error in serverless environments
+      if (fallbackErr.message && fallbackErr.message.includes('ENOENT') && fallbackErr.message.includes('ffmpeg')) {
+         return res.status(400).json({ error: 'This video doesn\'t have captions available. (Note: Audio transcription fallback is disabled in Netlify serverless environments).' });
+      }
+      
       return res.status(500).json({ error: `Failed to process video: ${fallbackErr.message}` });
     } finally {
       if (fs.existsSync(tempFilePath)) {
@@ -204,6 +202,11 @@ app.post('/api/audio/transcript', upload.single('file'), async (req, res) => {
   } catch (err: any) {
     console.error(`File processing failed:`, err);
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    
+    if (err.message && err.message.includes('ENOENT') && err.message.includes('ffmpeg')) {
+       return res.status(400).json({ error: 'Audio extraction requires ffmpeg, which is disabled in Netlify serverless environments. Please run locally.' });
+    }
+
     return res.status(500).json({ error: `Failed to process uploaded file: ${err.message}` });
   }
 });
