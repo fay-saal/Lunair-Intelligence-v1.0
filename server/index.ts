@@ -74,7 +74,14 @@ app.post('/api/youtube/transcript', async (req, res) => {
   } catch (err: any) {
     console.log(`Fast path failed: ${err.message}. Whisper fallback is currently disabled.`);
     
-    // Whisper fallback disabled per user request
+    // Disable Whisper fallback gracefully if running in Netlify (AWS Lambda)
+    // Serverless environments cannot run ffmpeg reliably and have 10s timeouts.
+    const isServerless = !!process.env.AWS_LAMBDA_FUNCTION_NAME || !!process.env.NETLIFY;
+    
+    if (isServerless) {
+      return res.status(400).json({ error: 'This video doesn\'t have captions available. (Note: Audio transcription fallback is disabled in Netlify serverless environments).' });
+    }
+
     const WHISPER_FALLBACK_ENABLED = true;
     
     if (!WHISPER_FALLBACK_ENABLED) {
