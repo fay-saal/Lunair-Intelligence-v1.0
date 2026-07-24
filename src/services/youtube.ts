@@ -1,5 +1,6 @@
 export const getYoutubeTranscript = async (url: string) => {
-  const response = await fetch('/api/youtube/transcript', {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const response = await fetch(`${API_BASE}/api/youtube/transcript`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url })
@@ -17,7 +18,8 @@ export const getAudioTranscript = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch('/api/audio/transcript', {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const response = await fetch(`${API_BASE}/api/audio/transcript`, {
     method: 'POST',
     body: formData
   });

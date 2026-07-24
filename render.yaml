@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: lunair-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npx tsx server/index.ts
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: OPENAI_API_KEY
+        sync: false
